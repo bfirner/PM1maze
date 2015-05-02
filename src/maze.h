@@ -35,7 +35,11 @@ class Maze {
 		int exit_x;
 		int exit_y;
 		bool is_valid_;
+		friend std::ostream& operator<<(std::ostream& os, Maze& maze);
 		std::vector<std::vector<Room*>> rooms;
+		//Mark this room as visited if it is within range
+		void visit(int x, int y);
+		bool finished_;
 };
 
 std::ostream& operator<<(std::ostream& os, Maze& maze);

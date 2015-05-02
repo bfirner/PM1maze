@@ -23,6 +23,7 @@ class Room {
 		virtual char getPrintChar() = 0;
 		//Indicate that the room was visited
 		virtual void visit();
+		virtual bool visited();
 	protected:
 		bool visited_;
 };

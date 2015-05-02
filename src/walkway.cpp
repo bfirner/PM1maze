@@ -4,6 +4,7 @@
  * Writen by PMI
  */
 
+#include "walkway.h"
 
 //Return a description of the room
 std::string Walkway::description() {

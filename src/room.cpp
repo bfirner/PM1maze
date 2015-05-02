@@ -16,6 +16,10 @@ void Room::visit() {
 	visited_ = true;
 }
 
+bool Room::visited() {
+	return visited_;
+}
+
 std::ostream& operator<<(std::ostream& os, Room* room) {
 	os << room->getPrintChar();
 	return os;

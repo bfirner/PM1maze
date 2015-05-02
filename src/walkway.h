@@ -5,6 +5,7 @@
  */
 
 #include "room.h"
+#include <string>
 
 #ifndef WALKWAY_H__
 #define WALKWAY_H__
