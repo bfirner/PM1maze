@@ -9,6 +9,7 @@
 #include <algorithm>
 #include "maze.h"
 #include "roomfactory.h"
+#include "mobilefactory.h"
 #include <fstream>
 #include "walkway.h"
 #include "exit.h"
@@ -38,23 +39,25 @@ Maze::Maze(std::string fname) {
 		//Add a new row to the rooms vector
 		rooms.push_back(std::vector<Room*>());
 		//Process this line of the maze
+		int i = 0;
 		for (char c : line) {
 			//We could use a switch statement (it would be faster)
 			//The best solution is to use something called a "factory"
-			Room* r = nullptr;
-			if ('O' == c) {
-				r = new Walkway();
+			//Try making a room; if that fails try making a mobile here
+			Room* r = roomFactory(c);
+			if (nullptr == r) {
 				//Set person_x and person_y
 				//The current row's size is the offset of this
 				//new element
 				int x = rooms.back().size();
 				//Subtract 1 from rows to get the index
 				int y = rooms.size()-1;
-				mobs.push_back(new Player(x, y));
-			}
-			else {
-				//Manufacture the appropriate room
-				r = roomFactory(c);
+				Mobile* mob = mobileFactory(c, x, y);
+				//Make sure this is actually a valid mobile type
+				if (nullptr != mob) {
+					mobs.push_back(mob);
+					r = new Walkway();
+				}
 			}
 
 			if (nullptr == r) {
@@ -112,6 +115,31 @@ void Maze::command(std::string input) {
 			mob->doSomething(rooms);
 		}
 	}
+
+	//Check if two things are in the same location
+	//O(n^2)
+	//Would be O(n) if they are sorted
+	for (int i = 0; i < mobs.size(); ++i) {
+		for (int j = i+1; j < mobs.size(); ++j) {
+			if (mobs.at(i)->getX() == mobs.at(j)->getX() and
+					mobs.at(i)->getY() == mobs.at(j)->getY()) {
+				//Try to find the player
+				Player* p = dynamic_cast<Player*>(mobs.at(i));
+				Dragon* d = dynamic_cast<Dragon*>(mobs.at(j));
+				if (nullptr == p) {
+					p = dynamic_cast<Player*>(mobs.at(j));
+				  d = dynamic_cast<Dragon*>(mobs.at(i));
+				}
+				//If we found the player try to give it to the mob
+				if (nullptr != p and nullptr != d) {
+					if (d->eat()) {
+						finished_ = true;
+					}
+				}
+			}
+		}
+	}
+
 	return;
 }
 
@@ -137,7 +165,8 @@ std::ostream& operator<<(std::ostream& os, Maze& maze) {
 			//the room look different. (through its own printing)
 			auto mob_in_room = std::find_if(maze.mobs.begin(), maze.mobs.end(),
 					[x,y](Mobile* mob) { return (x == mob->getX() and y == mob->getY());});
-			if (maze.mobs.end() != mob_in_room) {
+			if (maze.rooms.at(y).at(x)->visited() and
+					maze.mobs.end() != mob_in_room) {
 				os << (*mob_in_room);
 			}
 			else {
