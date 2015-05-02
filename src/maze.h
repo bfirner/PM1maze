@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include "room.h"
+#include "mobile.h"
 
 //Preprocessor guards so multiple .cpp files
 //can include this
@@ -30,10 +31,7 @@ class Maze {
 		//Is the maze finished?
 		bool finished();
 	private:
-		int person_x;
-		int person_y;
-		int exit_x;
-		int exit_y;
+		std::vector<Mobile*> mobs;
 		bool is_valid_;
 		friend std::ostream& operator<<(std::ostream& os, Maze& maze);
 		std::vector<std::vector<Room*>> rooms;

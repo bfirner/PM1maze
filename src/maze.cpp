@@ -6,6 +6,7 @@
  */
 
 
+#include <algorithm>
 #include "maze.h"
 #include "roomfactory.h"
 #include <fstream>
@@ -13,6 +14,8 @@
 #include "exit.h"
 #include <vector>
 #include <string>
+#include "player.h"
+#include "mobile.h"
 
 
 //Initialize the maze with a filename
@@ -44,10 +47,10 @@ Maze::Maze(std::string fname) {
 				//Set person_x and person_y
 				//The current row's size is the offset of this
 				//new element
-				person_x = rooms.back().size();
+				int x = rooms.back().size();
 				//Subtract 1 from rows to get the index
-				person_y = rooms.size()-1;
-
+				int y = rooms.size()-1;
+				mobs.push_back(new Player(x, y));
 			}
 			else {
 				//Manufacture the appropriate room
@@ -74,6 +77,10 @@ Maze::~Maze() {
 			delete r;
 		}
 	}
+
+	for (Mobile* mob : mobs) {
+		delete mob;
+	}
 }
 
 //Was the maze initialized properly?
@@ -88,47 +95,22 @@ std::string Maze::welcome() {
 
 //Handle the next user command
 void Maze::command(std::string input) {
-	//NEWS: north, east, south, west
-	int next_x = person_x;
-	int next_y = person_y;
-	if ("n" == input) {
-		//Go north
-		--next_y;
-	}
-	else if ("e" == input) {
-		++next_x;
-	}
-	else if ("w" == input) {
-		--next_x;
-	}
-	else if ("s" == input) {
-		++next_y;
-	}
-	else {
-		std::cout<<"What? I don't understand "<<input<<'\n';
-	}
-	//Is this next location valid?
-	//Checking in one spot saves a little bit of coding
-	if (0 <= next_y and 0 <= next_x and
-			next_y < rooms.size() and next_x < rooms.at(0).size() and
-			not rooms.at(next_y).at(next_x)->isWall()) {
-		//This room is okay!
-		person_x = next_x;
-		person_y = next_y;
-		//Mark this room and the adjacent ones as being visited
-		visit(person_x, person_y);
-		visit(person_x-1, person_y);
-		visit(person_x+1, person_y);
-		visit(person_x, person_y-1);
-		visit(person_x, person_y+1);
-		std::cout<<rooms.at(person_y).at(person_x)->description()<<'\n';;
-		if (nullptr != dynamic_cast<Exit*>(rooms.at(person_y).at(person_x))) {
-			std::cout<<"Congratulations! You reached the exit!\n";
-			finished_ = true;
+	//TODO FIXME Fix this
+	for (Mobile* mob : mobs) {
+		//Player uses the input
+		if (nullptr != dynamic_cast<Player*>(mob)) {
+			Player* player = dynamic_cast<Player*>(mob);
+			player->doSomething(rooms, input);
+			Exit* exit = dynamic_cast<Exit*>(rooms.at(player->getY()).at(player->getX()));
+			if (nullptr != exit) {
+				std::cout<<"Congratulations! You reached the exit!\n";
+				finished_ = true;
+			}
 		}
-	}
-	else {
-		std::cout<<"Ouch! You bonked your head! You can't go that way!\n";
+		else {
+			//Regular mobs just do something without input
+			mob->doSomething(rooms);
+		}
 	}
 	return;
 }
@@ -153,8 +135,10 @@ std::ostream& operator<<(std::ostream& os, Maze& maze) {
 			//It would be better for the room class to
 			//know if something is inside of it and have
 			//the room look different. (through its own printing)
-			if (x == maze.person_x and y == maze.person_y) {
-				os << 'O';
+			auto mob_in_room = std::find_if(maze.mobs.begin(), maze.mobs.end(),
+					[x,y](Mobile* mob) { return (x == mob->getX() and y == mob->getY());});
+			if (maze.mobs.end() != mob_in_room) {
+				os << (*mob_in_room);
 			}
 			else {
 				os << maze.rooms.at(y).at(x);
